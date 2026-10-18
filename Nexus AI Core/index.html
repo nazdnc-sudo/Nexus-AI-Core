@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise AI Invoice & Checkout Core Master v5.0</title>
+    <!-- Chart.js für Diagramme -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --bg-panel: #ffffff;
+            --bg-card: #f1f5f9;
+            --border-color: #e2e8f0;
+            --accent-blue: #2563eb;
+            --accent-cyan: #0891b2;
+            --accent-green: #16a34a;
+            --accent-red: #dc2626;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* LOGIN SCREEN STYLES */
+        .login-wrapper {
+            width: 100%;
+            max-width: 420px;
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 35px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .login-header h2 {
+            margin: 0;
+            color: var(--accent-blue);
+            font-size: 24px;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 25px;
+            text-align: left;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        /* MAIN APP STYLES */
+        .enterprise-wrapper {
+            width: 100%;
+            max-width: 1450px;
+            background: var(--bg-panel);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            display: none; /* Erst nach Login sichtbar */
+            grid-template-rows: auto auto 1fr;
+            position: relative;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e40af, #2563eb);
+            color: white;
+            padding: 18px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        /* NAVIGATION BAR */
+        .nav-bar {
+            background: #f1f5f9;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 30px;
+            display: flex;
+            gap: 5px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            padding: 12px 20px;
+            font-weight: bold;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+            background: #ffffff;
+        }
+
+        /* PAGES CONTENT */
+        .page-content {
+            display: none;
+            padding: 25px;
+        }
+
+        .page-content.active {
+            display: block;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr 380px;
+            gap: 20px;
+        }
+
+        .panel {
+            background: #ffffff;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .panel-highlight {
+            outline: 3px solid #06b6d4 !important;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4) !important;
+        }
+
+        .panel h3 {
+            margin: 0;
+            font-size: 16px;
+            color: var(--accent-blue);
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 8px;
+        }
+
+        .metric-card {
+            background: var(--bg-card);
+            padding: 14px;
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-blue);
+        }
+
+        .metric-title { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+        .metric-value { font-size: 22px; font-weight: bold; margin-top: 4px; }
+
+        .upload-zone {
+            border: 2px dashed var(--accent-blue);
+            background: #eff6ff;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .data-table th { color: var(--text-muted); background: #f8fafc; }
+
+        .terminal-box {
+            background: #0f172a;
+            color: #38bdf8;
+            font-family: 'Consolas', monospace;
+            font-size: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            height: 140px;
+            overflow-y: auto;
+        }
+
+        .btn {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+        .btn-success { background: var(--accent-green); }
+        .btn-danger { background: var(--accent-red); }
+
+        .badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .badge-success { background: #dcfce7; color: #15803d; }
+
+        /* ROBOT ASSISTENT */
+        .bot-overlay {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #ffffff;
+            border: 2px solid #06b6d4;
+            border-radius: 16px;
+            padding: 20px;
+            width: 340px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            display: none;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 1000;
+        }
+
+        .bot-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .bot-avatar {
+            font-size: 32px;
+            background: #e0f2fe;
+            padding: 8px;
+            border-radius: 50%;
+            border: 1px solid #06b6d4;
+        }
+
+        .bot-body { font-size: 13px; color: #334155; line-height: 1.5; }
+        .bot-footer { display: flex; justify-content: space-between; align-items: center; }
+    </style>
+</head>
+<body>
+
+    <!-- STARTSEITE: LOGIN SCREEN -->
+    <div class="login-wrapper" id="loginScreen">
+        <div class="login-header">
+            <h2>⚡ Nexus Enterprise Core</h2>
+            <p style="color: var(--text-muted); font-size: 13px; margin-top: 5px;">Anmeldung zur KI-Finanzplattform</p>
+        </div>
+
+        <div id="loginError" style="display: none; background: #fee2e2; color: #dc2626; padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 15px;">
+            Ungültiges Passwort! (Tipp: 1234)
+        </div>
+
+        <form class="login-form" onsubmit="event.preventDefault(); performLogin();">
+            <div class="form-group">
+                <label>Benutzername:</label>
+                <input type="text" id="loginUser" value="admin" required>
+            </div>
+            <div class="form-group">
+                <label>Passwort:</label>
+                <input type="password" id="loginPass" value="1234" required>
+            </div>
+            <div class="form-group">
+                <label>System-Rolle wählen:</label>
+                <select id="loginRole">
+                    <option value="buchhaltung">👩‍💼 Chef-Buchhaltung</option>
+                    <option value="cfo">👨‍💻 CFO / Finanzen</option>
+                    <option value="admin">⚙️ System Administrator</option>
+                </select>
+            </div>
+            <button class="btn" style="margin-top: 10px;" type="submit">🔒 Anmelden</button>
+        </form>
+    </div>
+
+    <!-- HAUPTANWENDUNG (EINGELOGGT) -->
+    <div class="enterprise-wrapper" id="appWrapper">
+        <header>
+            <h1 style="margin:0; font-size: 20px;">⚡ Nexus AI Core — Enterprise Terminal</h1>
+            <div class="user-info">
+                <span>Angemeldet als: <strong id="displayUsername">Admin</strong> (<span id="displayRole">ADMIN</span>)</span>
+                <button class="btn" style="background: #06b6d4; font-size: 12px; padding: 6px 12px;" onclick="startTour()">🤖 Info / Tour</button>
+                <button class="btn btn-danger" style="font-size: 12px; padding: 6px 12px;" onclick="performLogout()">Logout</button>
+            </div>
+        </header>
+
+        <!-- MULTI-PAGE NAVIGATION BAR -->
+        <div class="nav-bar">
+            <button class="nav-btn active" onclick="switchPage('page-dashboard', this)">📊 Dashboard & KI</button>
+            <button class="nav-btn" onclick="switchPage('page-archive', this)">📂 Rechnungs-Archiv</button>
+            <button class="nav-btn" onclick="switchPage('page-settings', this)">⚙️ SQL & System-Status</button>
+        </div>
+
+        <!-- SEITE 1: DASHBOARD -->
+        <div id="page-dashboard" class="page-content active">
+            <div class="dashboard-grid">
+                <div class="panel" id="panel-left">
+                    <h3>📊 Echtzeit-Metriken</h3>
+                    <div class="metric-card">
+                        <div class="metric-title">Geprüfte Rechnungen (Heute)</div>
+                        <div class="metric-value" id="statProcessed">42</div>
+                    </div>
+                    <div class="metric-card" style="border-left-color: var(--accent-green);">
+                        <div class="metric-title">Automatisierungsgrad</div>
+                        <div class="metric-value">98.4%</div>
+                    </div>
+                    <div class="metric-card" style="border-left-color: var(--accent-cyan);">
+                        <div class="metric-title">Gesamtvolumen (Netto)</div>
+                        <div class="metric-value" id="statVolume">14.890,50 €</div>
+                    </div>
+                    <div style="margin-top: 5px;">
+                        <h3 style="font-size: 13px;">📈 Monats-Ausgaben (Chart.js)</h3>
+                        <div style="background: var(--bg-card); padding: 10px; border-radius: 8px;">
+                            <canvas id="expenseChart" height="130"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" id="panel-center">
+                    <h3>📥 Echter Dokumenten-Upload (Drag & Drop)</h3>
+                    <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+                        <div style="font-size: 26px; margin-bottom: 5px;">📂</div>
+                        <strong>PDF-Rechnung auswählen oder ablegen</strong>
+                        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Klicken zum Hochladen (Simuliert KI-OCR)</div>
+                        <input type="file" id="fileInput" style="display: none;" onchange="handleFileUpload(event)">
+                    </div>
+
+                    <h3>📋 Aktuelle Buchungen</h3>
+                    <div style="overflow-y: auto; max-height: 220px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>ID</th><th>Lieferant</th><th>Betrag</th><th>Status</th></tr>
+                            </thead>
+                            <tbody id="invoiceTableBody">
+                                <tr><td>#INV-9021</td><td>CloudServer AG</td><td>450,00 €</td><td><span class="badge badge-success">Verifiziert</span></td></tr>
+                                <tr><td>#INV-9022</td><td>Office Supplies Ltd</td><td>129,99 €</td><td><span class="badge badge-success">Verifiziert</span></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-success" style="flex: 2;" onclick="exportToERP()">⚡ An ERP senden</button>
+                        <button class="btn" style="flex: 1; background: #0891b2; font-size: 13px;" onclick="exportToCSV()">📥 CSV Export</button>
+                    </div>
+                </div>
+
+                <div class="panel" id="panel-right">
+                    <h3>🖥️ Live Audit Terminal</h3>
+                    <div class="terminal-box" id="terminalLog">
+                        [17:15:00] SYSTEM: Core initialisiert.<br>
+                        [17:15:02] AI: Bereit für Dokumentenanalyse.<br>
+                    </div>
+                    <div id="adminToolsSection" style="display: none; margin-top: 10px; background: #fef2f2; border: 1px solid #fecaca; padding: 10px; border-radius: 8px;">
+                        <strong style="color: #dc2626; font-size: 12px;">⚙️ Admin Tools:</strong><br>
+                        <button class="btn btn-danger" style="font-size: 11px; padding: 5px 10px; margin-top: 5px;" onclick="clearLogsKlassen()">Logs zurücksetzen</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SEITE 2: DOKUMENTEN-ARCHIV -->
+        <div id="page-archive" class="page-content">
+            <div class="panel">
+                <h3>📂 Vollständiges Rechnungs-Archiv (Datenbank-Ansicht)</h3>
+                <p style="font-size: 13px; color: var(--text-muted);">Hier können alle jemals verarbeiteten Dokumente aus der SQL-Datenbank durchsucht und geprüft werden.</p>
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Rechnungs-ID</th><th>Erfassungsdatum</th><th>Lieferant</th><th>Kategorie</th><th>Betrag</th><th>SQL Status</th></tr>
+                    </thead>
+                    <tbody id="archiveTableBody">
+                        <tr><td>#INV-9021</td><td>2026-03-12</td><td>CloudServer AG</td><td>IT-Infrastruktur</td><td>450,00 €</td><td><span class="badge badge-success">Gespeichert (DB)</span></td></tr>
+                        <tr><td>#INV-9022</td><td>2026-03-11</td><td>Office Supplies Ltd</td><td>Bürobedarf</td><td>129,99 €</td><td><span class="badge badge-success">Gespeichert (DB)</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SEITE 3: EINSTELLUNGEN & SQL -->
+        <div id="page-settings" class="page-content">
+            <div class="panel">
+                <h3>⚙️ SQL-Datenbank Anbindung & Systemkonfiguration</h3>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 13px;">
+                    <strong>Datenbank-Status (MySQL / XAMPP):</strong> <span class="badge badge-success">BEREIT</span><br><br>
+                    <code>Host: localhost | Port: 3306 | DB: nexus_enterprise_db</code>
+                </div>
+                <h4 style="margin-top: 15px;">SQL-Tabelle erstellen (Für XAMPP phpMyAdmin):</h4>
+                <pre style="background: #0f172a; color: #38bdf8; padding: 12px; border-radius: 8px; font-size: 12px; overflow-x: auto;">
+CREATE TABLE invoices (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    invoice_number VARCHAR(50),
+    vendor VARCHAR(100),
+    amount DECIMAL(10,2),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);</pre>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ROBOTER ASSISTENT OVERLAY -->
+    <div class="bot-overlay" id="botOverlay">
+        <div class="bot-header">
+            <div class="bot-avatar">🤖</div>
+            <div>
+                <div class="bot-title">Nexus Robo-Assistent</div>
+                <div style="font-size: 11px; color: #06b6d4;">Interaktive System-Tour</div>
+            </div>
+        </div>
+        <div class="bot-body" id="botText">Hallo! Ich bin dein KI-Assistent.</div>
+        <div class="bot-footer">
+            <span class="bot-step-count" id="botStepCount">Schritt 1 von 5</span>
+            <button class="btn" id="botNextBtn" onclick="nextTourStep()">Weiter ➔</button>
+        </div>
+    </div>
+
+    <script>
+        // Chart.js Initialisierung
+        let chartInstance = null;
+
+        function initChart() {
+            if (chartInstance) return;
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'März', 'Apr', 'Mai', 'Juni'],
+                    datasets: [{
+                        label: 'Ausgaben in Tsd. €',
+                        data: [12, 19, 15, 17, 22, 14.8],
+                        backgroundColor: '#2563eb',
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { display: false } } }
+            });
+        }
+
+        // Login & Logout Steuerung
+        function performLogin() {
+            const user = document.getElementById('loginUser').value;
+            const pass = document.getElementById('loginPass').value;
+            const role = document.getElementById('loginRole').value;
+
+            if (pass !== '1234') {
+                document.getElementById('loginError').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('appWrapper').style.display = 'grid';
+
+            document.getElementById('displayUsername').innerText = user;
+            document.getElementById('displayRole').innerText = role.toUpperCase();
+
+            if (role === 'admin') {
+                document.getElementById('adminToolsSection').style.display = 'block';
+            } else {
+                document.getElementById('adminToolsSection').style.display = 'none';
+            }
+
+            logToTerminal(`SECURITY: User '${user}' als '${role.toUpperCase()}' angemeldet.`);
+            initChart();
+        }
+
+        function performLogout() {
+            document.getElementById('appWrapper').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+        }
+
+        // Navigation
+        function switchPage(pageId, btnEl) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            btnEl.classList.add('active');
+        }
+
+        let processedCount = 42;
+        let totalSum = 14890.50;
+        let currentStep = 0;
+        let allInvoices = [
+            { id: '#INV-9021', vendor: 'CloudServer AG', amount: 450.00, status: 'Verifiziert' },
+            { id: '#INV-9022', vendor: 'Office Supplies Ltd', amount: 129.99, status: 'Verifiziert' }
+        ];
+
+        const tourSteps = [
+            { elementId: 'panel-left', text: '<strong>Linke Seite:</strong> Echtzeit-Metriken und Ausgaben-Chart.', btnText: 'Weiter ➔' },
+            { elementId: 'panel-center', text: '<strong>Hauptbereich:</strong> Echter Dokumenten-Upload mit KI-Analyse.', btnText: 'Weiter ➔' },
+            { elementId: 'panel-right', text: '<strong>Audit Terminal:</strong> Revisionssicheres Protokoll aller Aktionen.', btnText: 'Weiter ➔' },
+            { elementId: null, text: '<strong>Mehrere Unterseiten:</strong> Nutze oben die Reiter, um zum Rechnungs-Archiv oder den SQL-Einstellungen zu wechseln!', btnText: 'Weiter ➔' },
+            { elementId: null, text: '<strong>Support & Kontakt:</strong><br>Bei Fragen mailen Sie bitte an:<br><a href="mailto:Unternehmen@info.de" style="color:#06b6d4; font-weight:bold;">Unternehmen@info.de</a>', btnText: 'Fertig ✔️' }
+        ];
+
+        function startTour() {
+            currentStep = 0;
+            document.getElementById('botOverlay').style.display = 'flex';
+            showStep(currentStep);
+        }
+
+        function showStep(stepIndex) {
+            document.querySelectorAll('.panel').forEach(el => el.classList.remove('panel-highlight'));
+            const step = tourSteps[stepIndex];
+            if (step.elementId) {
+                const targetEl = document.getElementById(step.elementId);
+                if (targetEl) targetEl.classList.add('panel-highlight');
+            }
+            document.getElementById('botText').innerHTML = step.text;
+            document.getElementById('botStepCount').innerText = `Schritt ${stepIndex + 1} von ${tourSteps.length}`;
+            document.getElementById('botNextBtn').innerText = step.btnText;
+        }
+
+        function nextTourStep() {
+            currentStep++;
+            if (currentStep < tourSteps.length) {
+                showStep(currentStep);
+            } else {
+                document.querySelectorAll('.panel').forEach(el => el.classList.remove('panel-highlight'));
+                document.getElementById('botOverlay').style.display = 'none';
+            }
+        }
+
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processedCount++;
+                const randomAmount = (Math.random() * 250 + 40).toFixed(2);
+                totalSum += parseFloat(randomAmount);
+
+                document.getElementById('statProcessed').innerText = processedCount;
+                document.getElementById('statVolume').innerText = totalSum.toLocaleString('de-DE', { minimumFractionDigits: 2 }) + ' €';
+
+                const newInv = { id: `#INV-${9020 + processedCount}`, vendor: file.name, amount: parseFloat(randomAmount), status: 'Verifiziert' };
+                allInvoices.unshift(newInv);
+                
+                updateTables(newInv);
+                logToTerminal(`OCR-PARSER: Datei '${file.name}' analysiert (${randomAmount} €).`);
+            }
+        }
+
+        function updateTables(inv) {
+            const tableBody = document.getElementById('invoiceTableBody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${inv.id}</td><td>${inv.vendor}</td><td>${inv.amount.toFixed(2)} €</td><td><span class="badge badge-success">${inv.status}</span></td>`;
+            tableBody.prepend(tr);
+
+            const archiveBody = document.getElementById('archiveTableBody');
+            const tr2 = document.createElement('tr');
+            tr2.innerHTML = `<td>${inv.id}</td><td>${new Date().toISOString().split('T')[0]}</td><td>${inv.vendor}</td><td>Allgemein</td><td>${inv.amount.toFixed(2)} €</td><td><span class="badge badge-success">Gespeichert (DB)</span></td>`;
+            archiveBody.prepend(tr2);
+        }
+
+        function exportToCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,ID;Lieferant;Betrag;Status\n";
+            allInvoices.forEach(inv => { csvContent += `${inv.id};${inv.vendor};${inv.amount};${inv.status}\n`; });
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            logToTerminal(`EXPORT: CSV heruntergeladen.`);
+        }
+
+        function logToTerminal(msg) {
+            const t = document.getElementById('terminalLog');
+            t.innerHTML += `[${new Date().toLocaleTimeString()}] ${msg}<br>`;
+            t.scrollTop = t.scrollHeight;
+        }
+
+        function exportToERP() {
+            logToTerminal(`ERP-SYNC: Rechnungen übermittelt.`);
+            alert("Erfolgreich an das ERP-System übertragen!");
+        }
+
+        function clearLogsKlassen() {
+            document.getElementById('terminalLog').innerHTML = `[System] Protokoll zurückgesetzt.<br>`;
+        }
+    </script>
+</body>
+</html>
